@@ -6,7 +6,7 @@ const cartSchema=new mongoose.Schema({
             ref:'user'
         },
         item:[{
-            product:{
+            productId:{
             type:mongoose.Schema.Types.ObjectId,
             ref:'Products',
             required:true
@@ -25,8 +25,19 @@ const cartSchema=new mongoose.Schema({
             },
             price:{
                 type:Number,
-                required:true
-            }}],
+                required:true,
+            
+            },
+            image:{
+              type:String,
+            },
+            name:{
+              type:String,
+            },
+            description:{
+              type:String,
+            }
+          }],
             total:{
                 type:Number,
                 default:0
@@ -38,7 +49,7 @@ const cartSchema=new mongoose.Schema({
 cartSchema.pre('save', async function(next) {
     try {
       // Calculate total by summing up (price * quantity) for all items
-      this.total = this.items.reduce((sum, item) => {
+      this.total = this.item.reduce((sum, item) => {
         return sum + (item.price * item.quantity);
       }, 0);
       

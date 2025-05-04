@@ -3,7 +3,6 @@ const User = require("../models/user");
 const validationsignup = async (req) => {
   try {
     const { firstName, lastName, email, password } = req.body;
-  
     if (!firstName || !lastName) {
       throw new Error("Please Enter Name");
     } else if (!validator.isEmail(email.trim())) {
@@ -12,10 +11,10 @@ const validationsignup = async (req) => {
       throw new Error("Please Strong PassWord");
     }
   } catch (err) {
-    res.status(500).json({ message: "validation error",  });
+    throw new Error("Validation Error");
   }
 };
-const productvaidation=(req)=>{
+const productvalidation=(req)=>{
   try{
     const {name,category,description,size,color,price}=req.body;
     if(!name || typeof name !=="string" ){
@@ -39,22 +38,9 @@ const productvaidation=(req)=>{
       throw new Error("enter valid category")
     }
   }catch(err){
-    res.status(500).json({ message: "validation error"  });
-  }
+   throw new Error("validation error")
 
-//   const allowUpdate=[
-//     "name",
-//     "category",
-//     "description",
-//     "size",
-//     "color",
-//     "image",
-//     "price"
-//   ];
-//   const editAllow=Object.keys(req.body).every((field)=>{
-//     allowUpdate.includes(field)
-//   })
-//   return editAllow;
 
 }
-module.exports = {productvaidation,validationsignup};
+}
+module.exports = {productvalidation,validationsignup};

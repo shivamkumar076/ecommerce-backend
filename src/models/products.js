@@ -18,8 +18,8 @@ const productSchema=new mongoose.Schema({
         maxLength:300
     },
     size:{
-        type:[String],
-        default:[],
+        type:String,
+        
     },
     price:{
         type:Number,
@@ -31,8 +31,7 @@ const productSchema=new mongoose.Schema({
         required:true,
     },
     color:{
-        type:[String],
-        default:[]
+        type:String
 
     }
 

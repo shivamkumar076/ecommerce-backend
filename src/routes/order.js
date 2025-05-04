@@ -1,26 +1,38 @@
 const express=require('express');
 const { userAuth } = require('../middleware/userAuth');
 const Cart =require("../models/cart");
-const Order=require("../models/order")
+const Order=require("../models/order");
+
 const router=express.Router();
 router.post("/createorder",userAuth,async (req,res)=>{
     try{
         const {shippingAddress, paymentmethod}=req.body;
-        const loggedinuser=req.user;
-        const cart=await Cart.findOne({user:loggedinuser}).populate('item.product');
+        if(!shippingAddress){
+            return res.status(400).json({
+                message:"please enter address",
+            })
+        }
+      
+        const loggedinuser=req.user?._id;
+        const cart=await Cart.findOne({userId:loggedinuser})
         if(!cart || cart.item.length===0){
             return res.status(400).json({
                 message:"no cart is found",
             })
         }
+       
+      
         const order = new Order({
-            user: req.user._id,
+            userId: req.user?._id,
             item: cart.item.map(item => ({
-              product: item.product._id,
+            productId: item.productId,
               quantity: item.quantity,
               price: item.price,
-              color: item.color,
-              size: item.size,
+              color: item?.color,
+              size: item?.size,
+              image:item?.image,
+              name:item?.name,
+              description:item?.description
               
             })),
             total:cart.total,
@@ -28,15 +40,35 @@ router.post("/createorder",userAuth,async (req,res)=>{
             paymentmethod
         });
         await order.save();
-        await Cart.deleteOne({ user: req.user._id });
+        await Cart.deleteOne({ userId: loggedinuser });
+
     
         res.status(201).json({
             message:"order successfully",
-            order
+            data:order
         });
 
     }catch(err){
         console.error("create order error",err)
+    }
+})
+router.get('/order',userAuth,async(req,res)=>{
+    try{
+        const id=req.user?.id;
+        const order=await Order.findOne({userId:id})
+        console.log(order);
+        if(!order){
+            res.status(200).json({
+                message:"order not found"
+            })
+        };
+        res.status(200).json({
+            message:"order get successfully",
+            data:order
+        })
+
+    }catch(err){
+        console.err("order get error");
     }
 })
 router.put("/cancel/:id",userAuth,async (req,res)=>{
@@ -51,7 +83,7 @@ router.put("/cancel/:id",userAuth,async (req,res)=>{
             })
 
         }
-        if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+        if (order.userId.toString() !== req.user?._id.toString() && !req.user?.isAdmin) {
             return res.status(403).json({ 
               success: false,
               message: 'Not authorized to cancel this order' 

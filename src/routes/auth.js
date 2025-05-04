@@ -2,10 +2,10 @@ const express=require('express');
 const router=express.Router();
 const User=require('../models/user');
 const bcrypt=require('bcrypt');
-const validationsignup=require('../utils/validation');
+const {validationsignup}=require('../utils/validation');
 //User signup
 //Method POST
-router.post('/signup',async (req,res)=>{
+router.post('/auth/signup',async (req,res)=>{
     try{
         validationsignup(req);
         const {firstName,lastName,email,password}=req.body;
@@ -20,24 +20,32 @@ router.post('/signup',async (req,res)=>{
             email,
             password:passwordHash
         })
-        await user.save();
+        const saveddata=await user.save();
+        console.log('save data',saveddata)
         const token=await user.getJWT();
         res.cookie('token', token, {
             httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
             // secure: process.env.NODE_ENV === 'production', // Ensures cookies are only sent over HTTPS in production
-            maxAge: 24 * 60 * 60 * 1000, // Cookie expiration time (24 hours)
+            maxAge: 60 * 60 * 1000, // Cookie expiration time (24 hours)
             sameSite: 'strict' // Prevents the browser from sending this cookie along with cross-site requests
         });
         res.status(200).json({
             messege:"data save successfully",
-            token:token
+            token,
+           data:{
+            id:saveddata._id,
+            firstName:saveddata.firstName,
+            lastName:saveddata.lastName,
+            email:saveddata.email
+
+           }
         })
     }catch(err){
         console.error('Error during signup:', err); // Log the full error
        res.status(500).send("Error signup",+err.message);
         }
 });
-router.post('/login',async (req,res)=>{
+router.post('/auth/login',async (req,res)=>{
     try{
         const {email,password}=req.body;
         const user=await User.findOne({email:email});
@@ -49,14 +57,15 @@ router.post('/login',async (req,res)=>{
             const token=await user.getJWT();
             console.log(token);
             res.cookie('token', token, {
-                httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-                // secure: process.env.NODE_ENV === 'production',// Ensures cookies are only sent over HTTPS in production
-                maxAge: 24 * 60 * 60 * 1000, // Cookie expiration time (24 hours)
-                sameSite: 'strict' // Prevents the browser from sending this cookie along with cross-site requests
+                httpOnly: true, 
+                // secure: process.env.NODE_ENV === 'production',
+                maxAge:  60 * 60 * 1000, 
+                sameSite: 'strict' 
             });
             res.json({
                 message:"user login successfully",
-                user:user,
+                data:user,
+            
             })
         }else {
             throw new Error("invalid credentials")
@@ -66,7 +75,7 @@ router.post('/login',async (req,res)=>{
 res.status(500).json({ message: "Login error", error: err.message });
     }
 });
-router.post('/logout', (req, res) => {
+router.post('/auth/logout', (req, res) => {
     res.clearCookie('token');
     res.json({ message: "Logged out successfully" });
 });

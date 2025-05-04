@@ -1,14 +1,14 @@
 const mongoose=require('mongoose');
 
 const orderSchema=new mongoose.Schema({
-    user:{
+    userId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"user",
         required:true,
     },
     item:[
         {
-            Products:{
+            ProductId:{
                 type:mongoose.Schema.Types.ObjectId,
                 ref:'products',
                 required:true
@@ -28,12 +28,21 @@ const orderSchema=new mongoose.Schema({
             size:{
                 type:String
             },
+            image:{
+                type:String,
+            },
+            name:{
+                type:String,
+              },
+              description:{
+                type:String,
+              }
           
 
         }
     ],
     total:{
-        type:String
+        type:Number
 
     },
     shippingAddress:{

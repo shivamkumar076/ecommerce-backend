@@ -4,8 +4,10 @@ const express = require("express");
 const router = express.Router();
 const path = require("path");
 const multer = require("multer");
-const { productvaidation } = require("../utils/validation");
-const { error } = require("console");
+const { productvalidation } = require("../utils/validation");
+const redis = require("../redis/redisclient");
+
+
 
 
 // @route post--/addproduct
@@ -70,7 +72,7 @@ router.post(
 );
 router.patch("/product/:id",userAuth,isAdminAuth, upload.single('image'), async (req,res)=>{
     try{
-        productvaidation(req.body);
+        productvalidation(req.body);
         const {name,description,size,color,price,category}=req.body;
         const image = req.file?.path;
         const id=req.params.id;
@@ -104,24 +106,36 @@ router.patch("/product/:id",userAuth,isAdminAuth, upload.single('image'), async 
     }
 
 });
-router.get('/product',async (req,res)=>{
+router.get('/products',async (req,res)=>{
     try{
       let page=parseInt(req.query.page) || 1;
       let limit=parseInt(req.query.limit) || 10;
       let skip=(page-1)*limit;
+
+      const redisKey = `products:page=${page}:limit=${limit}`;
+    const cached = await redis.get(redisKey);
+
+    if (cached) {
+      return res.status(200).json({
+        message: 'get all product successfully (from cache)',
+        data: JSON.parse(cached),
+      });
+    }
+
 
         const product=await Products.find({})
         .skip(skip)
         .limit(limit)
         .lean();
         if(!product){
-            res.status(401).status({
+            res.status(401).json({
                 message:"product not found"
             })
         };
+        await redis.set(redisKey, JSON.stringify(product), 'EX', 60);
         res.status(200).json({
             message:"get all product successfully",
-            product
+            data:product
         });
 
     }catch(err){
@@ -141,7 +155,7 @@ router.get("/product/:id",async (req,res)=>{
     };
     res.status(200).json({
       message:"product get successfull",
-      product
+      data:product
 
     })
 
